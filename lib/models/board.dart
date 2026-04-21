@@ -1,11 +1,8 @@
-/// lib/models/board.dart
-/// Board model for Flutter Xiangqi app
-
 import 'piece.dart';
 
 class Board {
   List<List<Piece?>> board;
-  List<List<Piece?>>? _history;
+  List<List<List<Piece?>>? _history;
 
   Board() : board = List.generate(10, (_) => List.generate(9, (_) => null));
 
