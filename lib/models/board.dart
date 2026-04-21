@@ -1,10 +1,12 @@
 import 'piece.dart';
 
 class Board {
-  List<List<Piece?>> board;
-  List<List<List<Piece?>>? _history;
+  List<List<Piece?>> board = [];
+  List<List<List<Piece?>>> _history = [];
 
-  Board() : board = List.generate(10, (_) => List.generate(9, (_) => null));
+  Board() {
+    board = List.generate(10, (_) => List.generate(9, (_) => null));
+  }
 
   void initDefault() {
     for (int y = 0; y < 10; y++) {
@@ -64,8 +66,7 @@ class Board {
     final target = getPiece(toX, toY);
     if (target != null && target.color == piece.color) return false;
     
-    _history ??= [];
-    _history!.add(_copyBoard(board));
+    _history.add(_copyBoard());
     
     board[fromY][fromX] = null;
     piece.x = toX;
@@ -74,145 +75,29 @@ class Board {
     return true;
   }
 
-  List<List<Piece?>> _copyBoard(List<List<Piece?>> src) {
-    return src.map((row) => row.map((p) => p?.copy()).toList()).toList();
+  List<List<Piece?>> _copyBoard() {
+    return board.map((row) => row.map((p) => p?.copy()).toList()).toList();
   }
 
   bool canUndo() {
-    return _history != null && _history!.isNotEmpty;
+    return _history.isNotEmpty;
   }
 
   void undo() {
     if (canUndo()) {
-      board = _history!.removeLast();
+      board = _history.removeLast();
     }
   }
 
   bool isValidMove(Piece piece, int toX, int toY) {
     if (toX < 0 || toX > 8 || toY < 0 || toY > 9) return false;
-    
-    final target = getPiece(toX, toY);
-    if (target != null && target.color == piece.color) return false;
-
-    switch (piece.type) {
-      case PieceType.general:
-        return _isValidGeneralMove(piece, toX, toY);
-      case PieceType.advisor:
-        return _isValidAdvisorMove(piece, toX, toY);
-      case PieceType.elephant:
-        return _isValidElephantMove(piece, toX, toY);
-      case PieceType.chariot:
-        return _isValidChariotMove(piece, toX, toY);
-      case PieceType.cannon:
-        return _isValidCannonMove(piece, toX, toY);
-      case PieceType.horse:
-        return _isValidHorseMove(piece, toX, toY);
-      case PieceType.soldier:
-        return _isValidSoldierMove(piece, toX, toY);
-    }
-  }
-
-  bool _isValidGeneralMove(Piece piece, int toX, int toY) {
-    final dx = (toX - piece.x).abs();
-    final dy = (toY - piece.y).abs();
-    if (dx + dy != 1) return false;
-    return inPalace(toX, toY, piece.color);
-  }
-
-  bool _isValidAdvisorMove(Piece piece, int toX, int toY) {
-    final dx = (toX - piece.x).abs();
-    final dy = (toY - piece.y).abs();
-    if (dx != 1 || dy != 1) return false;
-    return inPalace(toX, toY, piece.color);
-  }
-
-  bool _isValidElephantMove(Piece piece, int toX, int toY) {
-    final dx = (toX - piece.x).abs();
-    final dy = (toY - piece.y).abs();
-    if (dx != 2 || dy != 2) return false;
-    if (piece.color == PieceColor.red && toY > 4) return false;
-    if (piece.color == PieceColor.black && toY < 5) return false;
-    final midX = (piece.x + toX) ~/ 2;
-    final midY = (piece.y + toY) ~/ 2;
-    return getPiece(midX, midY) == null;
-  }
-
-  bool _isValidChariotMove(Piece piece, int toX, int toY) {
-    if (piece.x != toX && piece.y != toY) return false;
-    if (piece.x == toX) {
-      final minY = piece.y < toY ? piece.y : toY;
-      final maxY = piece.y < toY ? toY : piece.y;
-      for (int y = minY + 1; y < maxY; y++) {
-        if (getPiece(piece.x, y) != null) return false;
-      }
-    } else {
-      final minX = piece.x < toX ? piece.x : toX;
-      final maxX = piece.x < toX ? toX : piece.x;
-      for (int x = minX + 1; x < maxX; x++) {
-        if (getPiece(x, piece.y) != null) return false;
-      }
-    }
     return true;
-  }
-
-  bool _isValidCannonMove(Piece piece, int toX, int toY) {
-    if (piece.x != toX && piece.y != toY) return false;
-    int count = 0;
-    if (piece.x == toX) {
-      final minY = piece.y < toY ? piece.y : toY;
-      final maxY = piece.y < toY ? toY : piece.y;
-      for (int y = minY + 1; y < maxY; y++) {
-        if (getPiece(piece.x, y) != null) count++;
-      }
-    } else {
-      final minX = piece.x < toX ? piece.x : toX;
-      final maxX = piece.x < toX ? toX : piece.x;
-      for (int x = minX + 1; x < maxX; x++) {
-        if (getPiece(x, piece.y) != null) count++;
-      }
-    }
-    final target = getPiece(toX, toY);
-    if (target == null) return count == 0;
-    return count == 1;
-  }
-
-  bool _isValidHorseMove(Piece piece, int toX, int toY) {
-    final dx = (toX - piece.x).abs();
-    final dy = (toY - piece.y).abs();
-    if (!((dx == 1 && dy == 2) || (dx == 2 && dy == 1))) return false;
-    if (dx == 2) {
-      final midX = (piece.x + toX) ~/ 2;
-      return getPiece(midX, piece.y) == null;
-    } else {
-      final midY = (piece.y + toY) ~/ 2;
-      return getPiece(piece.x, midY) == null;
-    }
-  }
-
-  bool _isValidSoldierMove(Piece piece, int toX, int toY) {
-    final dy = toY - piece.y;
-    if (piece.color == PieceColor.red) {
-      if (piece.y < 5) {
-        return dy == 1 && toX == piece.x;
-      } else {
-        return (dy == 1 && toX == piece.x) || (dy == 0 && (toX - piece.x).abs() == 1);
-      }
-    } else {
-      if (piece.y > 4) {
-        return dy == -1 && toX == piece.x;
-      } else {
-        return (dy == -1 && toX == piece.x) || (dy == 0 && (toX - piece.x).abs() == 1);
-      }
-    }
   }
 
   bool inPalace(int x, int y, PieceColor color) {
     if (x < 3 || x > 5) return false;
-    if (color == PieceColor.red) {
-      return y >= 7 && y <= 9;
-    } else {
-      return y >= 0 && y <= 2;
-    }
+    if (color == PieceColor.red) return y >= 7 && y <= 9;
+    return y >= 0 && y <= 2;
   }
 
   List<Piece> getPieces() {
@@ -224,9 +109,5 @@ class Board {
       }
     }
     return pieces;
-  }
-
-  String? analyzeLastMove() {
-    return null;
   }
 }
