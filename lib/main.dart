@@ -2,6 +2,8 @@
 /// Entry point for Flutter Xiangqi app
 
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'models/piece.dart';
 import 'models/game.dart';
 
@@ -16,6 +18,16 @@ class XiangqiApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Xiangqi',
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en'),
+        Locale('vi'),
+      ],
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
@@ -36,20 +48,36 @@ class XiangqiHomePage extends StatefulWidget {
 class _XiangqiHomePageState extends State<XiangqiHomePage> {
   final Game game = Game();
   Piece? selectedPiece;
+  Locale _locale = const Locale('en');
+
+  void _switchLocale() {
+    setState(() {
+      _locale = _locale.languageCode == 'en' ? const Locale('vi') : const Locale('en');
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Xiangqi'),
+        title: Text(t.appName),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: _switchLocale,
+            tooltip: t.settings,
+          ),
+        ],
       ),
       body: Column(
         children: [
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Text(
-              'Turn: ${game.getCurrentPlayerText()}',
+              t.turn.replaceAll('{player}', game.getCurrentPlayerText()),
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
           ),
@@ -89,7 +117,15 @@ class _XiangqiHomePageState extends State<XiangqiHomePage> {
                       game.undo();
                     });
                   } : null,
-                  child: const Text('Undo'),
+                  child: Text(t.undo),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      game.reset();
+                    });
+                  },
+                  child: Text(t.newGame),
                 ),
               ],
             ),

@@ -59,6 +59,13 @@ class Game {
     return false;
   }
 
+  void reset() {
+    board.reset();
+    currentPlayer = PieceColor.red;
+    isGameOver = false;
+    winner = null;
+  }
+
   String getCurrentPlayerText() {
     return currentPlayer == PieceColor.red ? 'Red' : 'Black';
   }

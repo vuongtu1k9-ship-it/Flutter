@@ -6,6 +6,13 @@ class Board {
 
   Board() {
     board = List.generate(10, (_) => List.generate(9, (_) => null));
+    initDefault();
+  }
+
+  void reset() {
+    board = List.generate(10, (_) => List.generate(9, (_) => null));
+    _history.clear();
+    initDefault();
   }
 
   void initDefault() {
