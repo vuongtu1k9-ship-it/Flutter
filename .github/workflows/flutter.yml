@@ -1,31 +1,25 @@
-name: Flutter CI
+name: Build and Release APK
 
 on:
   push:
     branches: [ cotuong ]
-  pull_request:
-    branches: [ cotuong ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    
     steps:
       - uses: actions/checkout@v4
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.19.5'
-
-      - name: Create project
-        run: |
-          rm -rf *
-          rm -rf .*
-          flutter create --org com.xiangqi --project-name xiangqi --platforms android .
-
-      - name: Copy source
-        run: |
-          mkdir -p lib/models
+          flutter-version: '3.29.0'
+          channel: 'stable'
 
       - name: Install dependencies
         run: flutter pub get
@@ -33,8 +27,19 @@ jobs:
       - name: Build APK
         run: flutter build apk --release
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
+      - name: Get version
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | cut -d ' ' -f2 | cut -d '+' -f1)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: app-release
-          path: build/app/outputs/flutter-apk/app-release.apk
+          tag_name: v${{ steps.version.outputs.version }}-${{ github.run_number }}
+          name: Release v${{ steps.version.outputs.version }}-${{ github.run_number }}
+          files: build/app/outputs/flutter-apk/app-release.apk
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
